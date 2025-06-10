@@ -1,0 +1,100 @@
+import streamlit as st import tensorflow as tf import pickle
+import numpy as np
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+
+# Load the model
+model = tf.keras.models.load_model('fake_news_model.h5')
+
+
+# Load the tokenizer
+with open('tokenizer.pickle', 'rb') as handle: tokenizer = pickle.load(handle)
+
+def preprocess_text(text):
+# Tokenize and pad the text
+sequences = tokenizer.texts_to_sequences([text])
+padded = pad_sequences(sequences, maxlen=40, padding='post', truncating='post') return padded
+
+# Add custom page styling using CSS
+page_bg_img = '''
+<style>
+.stApp {
+background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url("https://shorturl.at/GsbLP"); background-size: cover;
+background-position: center; background-attachment: fixed; color:black;
+font-family: 'Arial', sans-serif;
+}
+ 
+button {
+font-size: 1.5rem; padding: 10px; border: none; border-radius: 10px; width: 150px; cursor: pointer;
+transition: background-color 0.3s ease;
+}
+h1 {
+font-size: 3rem; text-align: center; font-weight: bold; margin-top: 50px; color:white;
+text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+}
+textarea {
+font-size: 1.1rem; padding: 10px; border-radius:10px; margin: 10px 0;
+}
+button {
+color: blue ; font-size: 2 rem; padding: 15px; border: none;
+border-radius: 10px; width: 200px; cursor: pointer;
+transition: background-color 0.3s ease;
+}
+div.stTextArea { width: 70%;
+ 
+margin: 0 auto;
+}
+footer {
+color: white;
+text-align: center; font-size: 2rem; margin-top: 50px;
+}
+.custom-warning {
+background-color:wheat; /* Change this to any color you like */ padding: 15px;
+border-radius: 10px; color:black; /* Text color */ font-size: 1.2rem;
+text-align: center; margin-top: 20px;
+}
+</style>'''
+
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
+
+# App title
+st.title("Fake News Detector")
+
+
+# Text input area
+st.markdown("<h2 style='color:lime;font-weight:bold;'>Enter the news text:</h2>", unsafe_allow_html=True)
+news_text = st.text_area("", placeholder="Type your news here...") col1, col2, col3 = st.columns([1.5, 1, 1]) # Create three columns with col2:
+# Predict button
+if st.button("PREDICT"):
+if news_text:
+# Preprocess the input
+processed_text = preprocess_text(news_text)
+ 
+# Make prediction
+prediction = model.predict(processed_text)
+
+# Display result
+if prediction[0][0] > 0.5: st.markdown(f"""
+<div style="background-color: green; color:black; padding: 15px; height:14vh;width:25vw;border- radius: 10px; text-align: center;">
+<h3>This news is likely to be: <b>Real</b></h3>
+<p>Accuracy: {prediction[0][0]:.2f}</p>
+</div>
+""", unsafe_allow_html=True) else:
+st.markdown(f"""
+<div style="background-color: red; color:black; padding: 15px;height:14vh;width:25vw;margin:16px; border-radius: 10px; text-align: center;">
+<h3>This news is likely to be: <b>Fake</b></h3>
+<p>Accuracy: {1 - prediction[0][0]:.2f}</p>
+</div>
+""", unsafe_allow_html=True) else:
+st.markdown(
+"<div class='custom-warning'>Please enter some text to analyze.</div>", unsafe_allow_html=True
+)
+
+st.markdown(
+"<p style='font-size:1.2rem; color:white;'>Note:This is a simple model and may not always be accurate. Always verify news from reliable sources.</p>",unsafe_allow_html=True,
+)
+#st.write("Note: This is a simple model and may not always be accurate. Always verify news from reliable sources.")
+
+# Footer
+st.markdown("<footer><p style='font-size:2rem; color:white;'>Designed with	for detecting fake news</footer>", unsafe_allow_html=True)
